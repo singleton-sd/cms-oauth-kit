@@ -15,9 +15,9 @@ param storageAccountName string = 'ssdcmsoauthstprod'
 @description('App Service Plan name')
 param planName string = 'ssd-cmsoauth-plan-prod-ae'
 
-@description('Plan SKU. Y1 Linux Consumption is preferred; B1 only if Consumption is rejected in this RG.')
+@description('Plan SKU. B1 is required for auth.singletonsd.com managed TLS (Linux Consumption cannot present a custom-domain cert). Y1 is allowed only when custom domain is not needed.')
 @allowed(['Y1', 'B1'])
-param sku string = 'Y1'
+param sku string = 'B1'
 
 @description('Existing Key Vault name in this resource group')
 param keyVaultName string = 'ssd-global-kv-prod-ae'
@@ -68,7 +68,7 @@ var baseAppSettings = [
   }
   {
     name: 'WEBSITE_NODE_DEFAULT_VERSION'
-    value: '~20'
+    value: '~24'
   }
   {
     name: 'OAUTH_CLIENT_ID'
@@ -149,9 +149,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     reserved: true
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'Node|20'
+      linuxFxVersion: 'Node|24'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
+      alwaysOn: !isConsumption
       appSettings: concat(baseAppSettings, isConsumption ? consumptionSettings : [])
     }
   }

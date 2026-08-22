@@ -4,15 +4,15 @@ Shared Decap GitHub OAuth proxy at `https://auth.singletonsd.com`.
 
 ## Azure
 
-| Item           | Value                                                     |
-| -------------- | --------------------------------------------------------- |
-| Subscription   | `01c0bb8b-3770-4765-979a-cb13ae7e3dd2`                    |
-| Resource group | `rg-ssd-global`                                           |
-| Function App   | `ssd-cmsoauth-func-prod-ae`                               |
-| Plan           | `ssd-cmsoauth-plan-prod-ae` (Y1 Consumption / Node 20; B1 fallback) |
-| Storage        | `ssdcmsoauthstprod`                                       |
-| Key Vault      | `ssd-global-kv-prod-ae` (existing)                        |
-| Custom domain  | `auth.singletonsd.com`                                    |
+| Item           | Value                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Subscription   | `01c0bb8b-3770-4765-979a-cb13ae7e3dd2`                                                                                       |
+| Resource group | `rg-ssd-global`                                                                                                              |
+| Function App   | `ssd-cmsoauth-func-prod-ae`                                                                                                  |
+| Plan           | `ssd-cmsoauth-plan-prod-ae` **B1** (required for `auth.singletonsd.com` managed TLS; Y1 cannot present a custom-domain cert) |
+| Storage        | `ssdcmsoauthstprod`                                                                                                          |
+| Key Vault      | `ssd-global-kv-prod-ae` (existing)                                                                                           |
+| Custom domain  | `auth.singletonsd.com`                                                                                                       |
 
 ## Human steps (once)
 
@@ -60,7 +60,7 @@ az account set --subscription 01c0bb8b-3770-4765-979a-cb13ae7e3dd2
 ./scripts/deploy.sh --oauth-client-id '<client-id>'
 ```
 
-If Linux Consumption (Y1) is rejected in the RG, retry with `--sku B1`.
+Default SKU is **B1** so `auth.singletonsd.com` can use an App Service managed certificate. Do not switch to Y1 unless you are dropping the custom domain.
 
 Smoke the default host:
 

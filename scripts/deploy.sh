@@ -14,7 +14,7 @@ FUNCTION_APP_NAME="${AZURE_FUNCTIONAPP_NAME:-ssd-cmsoauth-func-prod-ae}"
 OAUTH_CLIENT_ID="${DECAP_OAUTH_CLIENT_ID:-}"
 SKIP_INFRA=0
 SKIP_ZIP=0
-SKU="${AZURE_FUNCTION_SKU:-Y1}"
+SKU="${AZURE_FUNCTION_SKU:-B1}"
 
 usage() {
   sed -n '2,8p' "$0" | sed 's/^# \?//'
