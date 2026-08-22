@@ -9,7 +9,7 @@ Shared Decap GitHub OAuth proxy at `https://auth.singletonsd.com`.
 | Subscription   | `01c0bb8b-3770-4765-979a-cb13ae7e3dd2`                    |
 | Resource group | `rg-ssd-global`                                           |
 | Function App   | `ssd-cmsoauth-func-prod-ae`                               |
-| Plan           | `ssd-cmsoauth-plan-prod-ae` (Y1 Consumption; B1 fallback) |
+| Plan           | `ssd-cmsoauth-plan-prod-ae` (Y1 Consumption / Node 20; B1 fallback) |
 | Storage        | `ssdcmsoauthstprod`                                       |
 | Key Vault      | `ssd-global-kv-prod-ae` (existing)                        |
 | Custom domain  | `auth.singletonsd.com`                                    |

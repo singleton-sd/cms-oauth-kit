@@ -122,7 +122,8 @@ echo "Zip deploying to ${FUNCTION_APP_NAME} ..."
 az functionapp deployment source config-zip \
   --resource-group "${RESOURCE_GROUP}" \
   --name "${FUNCTION_APP_NAME}" \
-  --src "${ZIP}"
+  --src "${ZIP}" \
+  --timeout 600
 
 echo "Done."
 echo "Default host: https://${FUNCTION_APP_NAME}.azurewebsites.net/health"

@@ -68,7 +68,7 @@ var baseAppSettings = [
   }
   {
     name: 'WEBSITE_NODE_DEFAULT_VERSION'
-    value: '~24'
+    value: '~20'
   }
   {
     name: 'OAUTH_CLIENT_ID'
@@ -149,7 +149,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     reserved: true
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'Node|24'
+      linuxFxVersion: 'Node|20'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       appSettings: concat(baseAppSettings, isConsumption ? consumptionSettings : [])
