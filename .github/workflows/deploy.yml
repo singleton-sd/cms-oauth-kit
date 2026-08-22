@@ -1,0 +1,92 @@
+# cms-oauth-kit — Azure Functions in rg-ssd-global.
+# Secrets: NEVER in GitHub Secrets. OIDC → Key Vault github-decap-oauth-client-secret.
+# If OIDC or DECAP_OAUTH_CLIENT_ID is missing, deploy steps SKIP (job succeeds).
+name: Deploy Function
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'infra/**'
+      - 'scripts/**'
+      - 'host.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cms-oauth-production
+  cancel-in-progress: false
+
+env:
+  AZURE_RESOURCE_GROUP: rg-ssd-global
+  AZURE_FUNCTIONAPP_NAME: ssd-cmsoauth-func-prod-ae
+  AZURE_KEY_VAULT: ssd-global-kv-prod-ae
+  AZURE_SUBSCRIPTION_ID: 01c0bb8b-3770-4765-979a-cb13ae7e3dd2
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build + deploy
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Check OIDC + client id
+        id: cfg
+        run: |
+          set -euo pipefail
+          if [ -z "${{ vars.AZURE_CLIENT_ID }}" ] || [ -z "${{ vars.AZURE_TENANT_ID }}" ] || [ -z "${{ vars.AZURE_SUBSCRIPTION_ID }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "OIDC Variables not set — skipping deploy."
+          elif [ -z "${{ vars.DECAP_OAUTH_CLIENT_ID }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "DECAP_OAUTH_CLIENT_ID Variable not set — create GitHub OAuth App, then set Variable + KV secret."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Azure login (OIDC)
+        if: steps.cfg.outputs.configured == 'true'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Assert KV secret exists
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          az keyvault secret show \
+            --vault-name "$AZURE_KEY_VAULT" \
+            --name github-decap-oauth-client-secret \
+            --query name -o tsv >/dev/null
+
+      - name: Deploy
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          DECAP_OAUTH_CLIENT_ID: ${{ vars.DECAP_OAUTH_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh --oauth-client-id "$DECAP_OAUTH_CLIENT_ID"

@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "OAUTH_CLIENT_ID": "replace-with-github-oauth-app-client-id",
+    "OAUTH_CLIENT_SECRET": "replace-with-github-oauth-app-client-secret",
+    "REDIRECT_URL": "http://localhost:7071/callback",
+    "SCOPES": "repo,user",
+    "ORIGINS": "*.singletonsd.com,*.patoperpetua.com,singletonsd.com,patoperpetua.com,localhost:4321"
+  }
+}
