@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Retire the Azure Function deploy path (GitHub Actions “Deploy Function” workflow, `infra/main.bicep`, and Azure-only deploy/bind scripts). Production CMS auth is Oracle Coolify at `https://api.singletonsd.com/v1/cms-auth`. Live Azure resource deletion is a separate infra change.
+
 ## 0.1.0 — 2026-08-23
 
 - Bootstrap shared Decap GitHub OAuth Azure Function (`/auth`, `/callback`, `/health`).
