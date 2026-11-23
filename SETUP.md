@@ -1,18 +1,18 @@
 # SETUP — cms-oauth-kit
 
-Shared Decap GitHub OAuth proxy at `https://auth.singletonsd.com`.
+Shared Decap GitHub OAuth proxy. Production is Oracle Coolify behind the API gateway at `https://api.singletonsd.com/v1/cms-auth`.
 
-## Azure
+## Production
 
-| Item           | Value                                                                                                                        |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Subscription   | `01c0bb8b-3770-4765-979a-cb13ae7e3dd2`                                                                                       |
-| Resource group | `rg-ssd-global`                                                                                                              |
-| Function App   | `ssd-cmsoauth-func-prod-ae`                                                                                                  |
-| Plan           | `ssd-cmsoauth-plan-prod-ae` **B1** (required for `auth.singletonsd.com` managed TLS; Y1 cannot present a custom-domain cert) |
-| Storage        | `ssdcmsoauthstprod`                                                                                                          |
-| Key Vault      | `ssd-global-kv-prod-ae` (existing)                                                                                           |
-| Custom domain  | `auth.singletonsd.com`                                                                                                       |
+| Item          | Value                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| Public origin | `https://api.singletonsd.com/v1/cms-auth`                                   |
+| Auth          | `GET https://api.singletonsd.com/v1/cms-auth/auth`                          |
+| Callback      | `GET https://api.singletonsd.com/v1/cms-auth/callback`                      |
+| Host          | Oracle Coolify (`cms-auth` upstream; gateway in `singleton-sd/api-gateway`) |
+| Key Vault     | `ssd-global-kv-prod-ae` (ADR-007: Azure is Key Vault only)                  |
+
+This repository does **not** deploy the Azure Function App. The old Function (`ssd-cmsoauth-func-prod-ae` / `auth.singletonsd.com`), App Service plan, storage account, and Function Key Vault role assignment are removed from git here; live Azure deletion is a separate infra change ([SSD-1124](https://app.clickup.com/t/14ymjnwbrct)).
 
 ## Human steps (once)
 
@@ -22,7 +22,7 @@ GitHub → Settings → Developer settings → OAuth Apps → New (or update the
 
 - Name: `Singleton SD CMS OAuth`
 - Homepage: `https://singletonsd.com`
-- Authorization callback URL: `https://auth.singletonsd.com/callback`
+- Authorization callback URL: `https://api.singletonsd.com/v1/cms-auth/callback`
 
 Put the **client secret** in Key Vault:
 
@@ -33,64 +33,23 @@ az keyvault secret set \
   --value '<secret>'
 ```
 
-Set GitHub repo Variable `DECAP_OAUTH_CLIENT_ID` to the client id (non-secret). Optionally also store the id in KV as `github-decap-oauth-client-id`.
-
 Never put the secret in git or GitHub Secrets.
 
-### 2. Entra OIDC for GitHub Actions
+### 2. Coolify
 
-Create/federate an Entra app so `azure/login@v2` works for this repo:
+CMS auth is already the Coolify `cms-auth` service in front of APISIX. App images and gateway routes live in their own repos (`singleton-sd/decap-oauth`, `singleton-sd/api-gateway`). Do not add Azure Function zip-deploy or Bicep back into this kit.
 
-- `repo:singleton-sd/cms-oauth-kit:ref:refs/heads/main`
-- `repo:singleton-sd/cms-oauth-kit:pull_request` (optional)
-
-Grant the identity rights to deploy into `rg-ssd-global` and read the KV secret (`Key Vault Secrets User` is also assigned to the Function’s managed identity by Bicep).
-
-Repo Variables (IDs only):
-
-- `AZURE_CLIENT_ID`
-- `AZURE_TENANT_ID`
-- `AZURE_SUBSCRIPTION_ID` = `01c0bb8b-3770-4765-979a-cb13ae7e3dd2`
-- `DECAP_OAUTH_CLIENT_ID`
-
-### 3. Deploy Function
+Smoke:
 
 ```bash
-az account set --subscription 01c0bb8b-3770-4765-979a-cb13ae7e3dd2
-./scripts/deploy.sh --oauth-client-id '<client-id>'
+curl -sS https://api.singletonsd.com/v1/cms-auth/auth -o /dev/null -w '%{http_code} %{redirect_url}\n'
 ```
 
-Default SKU is **B1** so `auth.singletonsd.com` can use an App Service managed certificate. Do not switch to Y1 unless you are dropping the custom domain.
-
-Smoke the default host:
-
-```bash
-curl -sS https://ssd-cmsoauth-func-prod-ae.azurewebsites.net/health
-```
-
-### 4. DNS + custom domain
-
-```bash
-./scripts/bind-custom-domain.sh --print-dns
-```
-
-Create in Route53 (`singletonsd.com`):
-
-- `CNAME auth` → `ssd-cmsoauth-func-prod-ae.azurewebsites.net`
-- `TXT asuid.auth` → the printed verification id
-
-Then:
-
-```bash
-./scripts/bind-custom-domain.sh
-curl -sS https://auth.singletonsd.com/health
-```
-
-`GET /auth` must 302 to GitHub with `redirect_uri=https://auth.singletonsd.com/callback`.
+`GET /v1/cms-auth/auth` must 302 to GitHub with `redirect_uri=https://api.singletonsd.com/v1/cms-auth/callback`.
 
 ## Local
 
-Requires [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local) v4.
+Requires [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local) v4. There is no Dockerfile in this repository; `pnpm start` still uses the Functions host.
 
 ```bash
 pnpm install
