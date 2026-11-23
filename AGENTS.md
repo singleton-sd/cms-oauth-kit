@@ -48,7 +48,7 @@ pnpm test
 pnpm start # http://localhost:7071/auth (Azure Functions Core Tools)
 ```
 
-Point local Decap `base_url` at `http://localhost:7071` only when testing this process itself. Production `/admin` always uses `https://api.singletonsd.com` with `auth_endpoint: v1/cms-auth/auth`.
+Point local Decap at `base_url: http://localhost:7071` and `auth_endpoint: auth` only when testing this process itself. Production `/admin` always uses `base_url: https://api.singletonsd.com` and `auth_endpoint: v1/cms-auth/auth`.
 
 ## What this service serves
 
